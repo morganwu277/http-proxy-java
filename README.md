@@ -1,6 +1,11 @@
 How does this proxy really work?
 
 ```
+gradle run --args <OPTIONS>
+gradle createCertificate
+```
+
+```
 Basic Principles:
 1. Channel is essentially a socket. Similar to InputStream, InBoundHandler only handle read events. 
 Similarly, OutoundHandlers OutputStream 

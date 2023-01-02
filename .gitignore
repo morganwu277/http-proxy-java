@@ -7,3 +7,5 @@ build
 .idea
 target
 *.iml
+*.crt
+*.pem
