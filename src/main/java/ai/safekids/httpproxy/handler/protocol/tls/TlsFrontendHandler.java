@@ -46,20 +46,36 @@ import ai.safekids.httpproxy.enums.ProxyMode;
 import ai.safekids.httpproxy.tls.TlsUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.ssl.AbstractSniHandler;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.ReferenceCountedOpenSslEngine;
 import io.netty.handler.ssl.SslClientHelloHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslHandshakeCompletionEvent;
+import io.netty.handler.ssl.SslMasterKeyHandler;
 import io.netty.util.concurrent.Future;
+import io.netty.util.internal.ReflectionUtil;
+import io.netty.util.internal.SystemPropertyUtil;
+import io.netty.util.internal.logging.InternalLogger;
+import io.netty.util.internal.logging.InternalLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSession;
+import java.lang.reflect.Field;
 import java.util.List;
 
+import static io.netty.handler.ssl.SslMasterKeyHandler.*;
 import static io.netty.util.ReferenceCountUtil.*;
 
 public class TlsFrontendHandler extends ChannelDuplexHandler {
@@ -126,7 +142,7 @@ public class TlsFrontendHandler extends ChannelDuplexHandler {
         protected Future<Address> lookup(ChannelHandlerContext ctx, String hostname) {
             LOGGER.debug("Client SNI lookup with {}", hostname);
             if (hostname != null) {
-                int port = isTransparentProxy() ? 443 : connectionContext.getServerAddr().getPort();
+                int port = isTransparentProxy()? 443 : connectionContext.getServerAddr().getPort();
                 return ctx.executor().newSucceededFuture(new Address(hostname, port));
             }
             return ctx.executor().newSucceededFuture(null);
@@ -166,8 +182,8 @@ public class TlsFrontendHandler extends ChannelDuplexHandler {
                 SslHandler sslHandler = sslHandler(ctx.alloc());
                 try {
                     ctx.pipeline()
-                        .addAfter(ctx.name(), null, new AlpnHandler())
-                        .replace(ctx.name(), null, sslHandler);
+                       .addAfter(ctx.name(), null, new AlpnHandler())
+                       .replace(ctx.name(), null, sslHandler);
                     sslHandler = null;
                 } finally {
                     if (sslHandler != null) {
@@ -180,7 +196,9 @@ public class TlsFrontendHandler extends ChannelDuplexHandler {
         @Override
         protected Future<String> lookup(ChannelHandlerContext ctx, List<String> protocols) {
             LOGGER.debug("Client ALPN lookup with {}", protocols);
-            connectionContext.tlsCtx().protocolsPromise().setSuccess(protocols);
+            if (!connectionContext.tlsCtx().protocolPromise().isDone()) {
+                connectionContext.tlsCtx().protocolsPromise().setSuccess(protocols);
+            }
             return connectionContext.tlsCtx().protocolPromise();
         }
     }

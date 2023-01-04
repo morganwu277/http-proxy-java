@@ -9,11 +9,28 @@ plugins {
     id 'application'
 }
 
+group = 'ai.safekids.desktop'
+version = '1.0.0-SNAPSHOT'
+description = 'http-proxy'
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+
 application {
     mainClassName = project.hasProperty("mainClass") ? project.getProperty("mainClass") : "ai.safekids.httpproxy.NitmProxy"
 }
 
-task createCertificate(type: JavaExec) {
+task debug(type: JavaExec) {
+    mkdir("logs")
+    dependencies {}
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ai.safekids.httpproxy.NitmProxy'
+    jvmArgs = ["-javaagent:debug/jSSLKeyLog.jar=logs/sslkeys.log",
+               "-Dlogback.configurationFile=debug/logger_debug.xml",
+               "-Dcheckstyle.skip",
+               "-Dcom.sun.net.ssl.checkRevocation=false"]
+    args = ["-tls=TLSv1.2,TLSv1.3"]
+}
+
+task cert(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'ai.safekids.httpproxy.CertGenerator'
 }
@@ -38,11 +55,6 @@ dependencies {
     compileOnly 'org.mortbay.jetty.alpn:jetty-alpn-agent:2.0.10'
     compileOnly 'com.puppycrawl.tools:checkstyle:9.2.1'
 }
-
-group = 'ai.safekids.desktop'
-version = '1.0.0-SNAPSHOT'
-description = 'http-proxy'
-java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 publishing {
     repositories {

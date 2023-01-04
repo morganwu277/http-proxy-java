@@ -1,8 +1,30 @@
-How does this proxy really work?
+Basic Commands
 
 ```
+cert.cmd (will create the server certificates)
+run.cmd (will run the proxy with default settings)
+debug.cmd (will run it in debug mode with SSL decryption)
+
+or directly with gradle
+
 gradle run --args <OPTIONS>
-gradle createCertificate
+gradle debug
+gradle cert
+```
+
+```
+ANALYZE PACKETS USING WIRESHARK
+===============================
+Capture Browser Traffic
+ - Set an environment variable:
+ - SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
+
+Capture Netty Traffic to the server (Ethernet Outbound)
+ - tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslkeys.log"
+ - wireshark -r logs\nlog.pcap
+
+Configure Wireshark to use the file Edit -> Preferences -> Protocol -> TLS -> Master Secret Log File Name
+and point to either sslbrowser.log or sslnitm.log to do full decryption.
 ```
 
 ```

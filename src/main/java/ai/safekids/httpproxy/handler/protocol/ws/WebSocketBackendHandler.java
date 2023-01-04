@@ -49,8 +49,13 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
+import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpRequestEncoder;
 import io.netty.handler.codec.http.HttpResponse;
@@ -113,6 +118,12 @@ public class WebSocketBackendHandler extends ChannelDuplexHandler {
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof FullHttpRequest && isWebSocketUpgrade(((FullHttpRequest) msg).headers())) {
+            FullHttpRequest original = (FullHttpRequest) msg;
+
+            //
+            //this crashes facebook messages... had to remove content length on the request
+            ///
+            original.headers().remove(HttpHeaderNames.CONTENT_LENGTH);
             LOGGER.debug("{} : ws upgrading", connectionContext);
         }
         ctx.write(msg, promise);
@@ -125,7 +136,6 @@ public class WebSocketBackendHandler extends ChannelDuplexHandler {
         List<ChannelHandler> addedHandlers = new ArrayList<>();
 
         addedHandlers.add(new HeadExceptionHandler(connectionContext));
-        addedHandlers.add(new LoggingHandler("Backend", LogLevel.TRACE));
         addedHandlers.add(new WebSocketFrameLogger("WS SERVER RAW", connectionContext));
         addedHandlers.add(new WebSocket13FrameEncoder(true));
         addedHandlers.add(new WebSocket13FrameDecoder(
@@ -133,8 +143,8 @@ public class WebSocketBackendHandler extends ChannelDuplexHandler {
                                   .allowExtensions(true)
                                   .allowMaskMismatch(true)
                                   .build()));
-//        addedHandlers.add(new WebSocketFrameLogger("WS SERVER AFTER COMPRESS", connectionContext));
         addedHandlers.forEach(h -> ctx.pipeline().addBefore(aggregator.name(), null, h));
+
         //we will remove both the handlers
         ChannelHandlerContext httpCtx = ctx.pipeline().context(Http1BackendHandler.class);
         if (httpCtx != null) {
@@ -142,7 +152,6 @@ public class WebSocketBackendHandler extends ChannelDuplexHandler {
         }
 
         ctx.pipeline().remove(ctx.name());
-        //logPipeline(ctx, "After protocol upgrade");
     }
 
     void logPipeline(ChannelHandlerContext ctx, String name) {

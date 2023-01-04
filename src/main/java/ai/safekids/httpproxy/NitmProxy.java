@@ -60,7 +60,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 
 import static ai.safekids.httpproxy.tls.CertUtil.*;
 
@@ -216,6 +219,14 @@ public class NitmProxy {
                   .desc("not verify on server certificate")
                   .build());
 
+        options.addOption(
+            Option.builder()
+                  .longOpt("tls")
+                  .hasArg(true)
+                  .argName("TLSPROTOCOLS")
+                  .desc("TLSv1.3, TLSv1.2")
+                  .build());
+
         CommandLine commandLine = null;
         try {
             commandLine = parser.parse(options, args);
@@ -255,6 +266,17 @@ public class NitmProxy {
                 throw new IllegalArgumentException("No key found: " + certKey);
             }
             config.setKey(readPrivateKeyFromFile(certKey));
+        }
+        if (commandLine.hasOption("tls")) {
+            String tlsProtocols = commandLine.getOptionValue("tls");
+            List<String> res = Arrays.asList(tlsProtocols.split(","));
+            List<String> invalid = res.stream()
+                                      .filter(p -> !Arrays.asList("TLSv1.3", "TLSv1.2").contains(p))
+                                      .collect(Collectors.toList());
+            if (invalid.size() > 0) {
+                throw new IllegalArgumentException("Invalid TLS protocols specified " + invalid.get(0));
+            }
+            config.setTlsProtocols(res);
         }
         if (commandLine.hasOption("k")) {
             config.setInsecure(true);
