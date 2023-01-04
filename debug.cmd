@@ -1,2 +1,2 @@
-rm logs/debug.log
-gradle debug
+rm debug/debug.log
+gradlew debug

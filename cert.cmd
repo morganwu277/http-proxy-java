@@ -1,1 +1,1 @@
-gradle cert
+gradlew cert

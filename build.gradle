@@ -19,11 +19,11 @@ application {
 }
 
 task debug(type: JavaExec) {
-    mkdir("logs")
+    mkdir("debug/logs")
     dependencies {}
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'ai.safekids.httpproxy.NitmProxy'
-    jvmArgs = ["-javaagent:debug/jSSLKeyLog.jar=logs/sslkeys.log",
+    jvmArgs = ["-javaagent:debug/jSSLKeyLog.jar=debug/logs/sslkeys.log",
                "-Dlogback.configurationFile=debug/logger_debug.xml",
                "-Dcheckstyle.skip",
                "-Dcom.sun.net.ssl.checkRevocation=false"]

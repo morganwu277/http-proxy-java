@@ -1,1 +1,1 @@
-gradle run
+gradlew run

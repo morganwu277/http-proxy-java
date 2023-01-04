@@ -7,9 +7,9 @@ debug.cmd (will run it in debug mode with SSL decryption)
 
 or directly with gradle
 
-gradle run --args <OPTIONS>
-gradle debug
-gradle cert
+gradlew run --args <OPTIONS>
+gradlew debug
+gradlew cert
 ```
 
 ```
@@ -22,6 +22,11 @@ Capture Browser Traffic
 Capture Netty Traffic to the server (Ethernet Outbound)
  - tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslkeys.log"
  - wireshark -r logs\nlog.pcap
+
+ OR
+ 
+ debug/shark.cmd (to capture)
+ debug/view-shark.cmd (to view)
 
 Configure Wireshark to use the file Edit -> Preferences -> Protocol -> TLS -> Master Secret Log File Name
 and point to either sslbrowser.log or sslnitm.log to do full decryption.
