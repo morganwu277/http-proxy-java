@@ -50,7 +50,7 @@ public class ChannelPipelineAssert extends AbstractAssert<ChannelPipelineAssert,
         super(actual, ChannelPipelineAssert.class);
     }
 
-    @SuppressWarnings("all")
+    @SuppressWarnings("unchecked")
     public ChannelPipelineAssert hasHandlers(Class<? extends ChannelHandler>... handlers) {
         Class<?>[] actual = this.actual
                 .toMap()

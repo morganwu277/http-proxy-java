@@ -57,7 +57,7 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -95,6 +95,7 @@ public class CertUtil {
     private CertUtil() {
     }
 
+    @SuppressWarnings("deprecation")
     public static Certificate newCert(X509CertificateHolder parent, PrivateKeyInfo key, String host) {
         try {
             //need a date before today to adjust for other time zones
@@ -164,7 +165,7 @@ public class CertUtil {
     @SuppressWarnings("deprecation")
     public static byte[] toPem(Object object) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (PEMWriter writer = new PEMWriter(new OutputStreamWriter(outputStream))) {
+        try (JcaPEMWriter writer = new JcaPEMWriter(new OutputStreamWriter(outputStream))) {
             writer.writeObject(object);
             writer.flush();
             return outputStream.toByteArray();
@@ -176,7 +177,7 @@ public class CertUtil {
     @SuppressWarnings("deprecation")
     public static byte[] toPem(Object... objects) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (PEMWriter writer = new PEMWriter(new OutputStreamWriter(outputStream))) {
+        try (JcaPEMWriter writer = new JcaPEMWriter(new OutputStreamWriter(outputStream))) {
             for (Object object : objects) {
                 writer.writeObject(object);
             }
@@ -185,6 +186,7 @@ public class CertUtil {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public static PrivateKeyInfo readPrivateKeyFromFile(String pemFile) {
         Object object = readPemFromFile(pemFile);
         if (object instanceof PEMKeyPair) {
@@ -202,6 +204,7 @@ public class CertUtil {
      * @return
      * @throws NoSuchAlgorithmException
      */
+    @SuppressWarnings("deprecation")
     public static KeyPair generateKeyPair(int keySize) throws NoSuchAlgorithmException {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(keySize, new SecureRandom());
@@ -221,6 +224,7 @@ public class CertUtil {
      * @throws OperatorCreationException
      * @throws CertificateException
      */
+    @SuppressWarnings("deprecation")
     public static X509Certificate generateCertificate(String subject, Date beforeDate, Date notAfterDate,
                                                       KeyPair keyPair)
             throws CertIOException, OperatorCreationException, CertificateException {
@@ -246,6 +250,7 @@ public class CertUtil {
      * @param keySize
      * @throws Exception
      */
+    @SuppressWarnings("deprecation")
     public static void createCACertificates(File caCertFile, File caPrivateFile, String subject, int keySize)
             throws Exception {
 

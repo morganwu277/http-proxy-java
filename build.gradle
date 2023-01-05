@@ -15,7 +15,11 @@ description = 'http-proxy'
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 application {
-    mainClassName = project.hasProperty("mainClass") ? project.getProperty("mainClass") : "ai.safekids.httpproxy.NitmProxy"
+    mainClass.set(project.hasProperty("mainClass") ? project.getProperty("mainClass") : "ai.safekids.httpproxy.NitmProxy")
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 }
 
 task debug(type: JavaExec) {
