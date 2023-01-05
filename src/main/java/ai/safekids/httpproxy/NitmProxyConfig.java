@@ -98,7 +98,7 @@ public class NitmProxyConfig {
         insecure = false;
         tlsProtocols = asList("TLSv1.3", "TLSv1.2");
 
-        maxContentLength = 1024 * 1024;
+        maxContentLength = 50 * 1024 * 1024;
 
         listenerStore = new NitmProxyListenerStore();
         detectors = Collections.singletonList(Http1ProtocolDetector.INSTANCE);

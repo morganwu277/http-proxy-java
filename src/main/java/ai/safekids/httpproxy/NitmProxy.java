@@ -60,6 +60,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.text.spi.NumberFormatProvider;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -227,6 +228,14 @@ public class NitmProxy {
                   .desc("TLSv1.3, TLSv1.2")
                   .build());
 
+        options.addOption(
+            Option.builder()
+                  .longOpt("maxlength")
+                  .hasArg(true)
+                  .argName("MAXLENGTH")
+                  .desc("1000000")
+                  .build());
+
         CommandLine commandLine = null;
         try {
             commandLine = parser.parse(options, args);
@@ -278,6 +287,13 @@ public class NitmProxy {
             }
             config.setTlsProtocols(res);
         }
+
+        if (commandLine.hasOption("maxlength")) {
+            String maxLengthStr = commandLine.getOptionValue("maxlength");
+            Integer maxLength = Integer.parseInt(maxLengthStr);
+            config.setMaxContentLength(maxLength);
+        }
+
         if (commandLine.hasOption("k")) {
             config.setInsecure(true);
         }

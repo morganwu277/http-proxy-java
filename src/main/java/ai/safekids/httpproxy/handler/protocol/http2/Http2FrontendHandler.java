@@ -40,24 +40,29 @@
 package ai.safekids.httpproxy.handler.protocol.http2;
 
 import ai.safekids.httpproxy.ConnectionContext;
+import ai.safekids.httpproxy.handler.HeadExceptionHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.DefaultHttp2SettingsFrame;
 import io.netty.handler.codec.http2.DefaultHttp2WindowUpdateFrame;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.Http2Flags;
+import io.netty.handler.codec.http2.Http2Frame;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2FrameLogger;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2SettingsFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +72,8 @@ import static io.netty.handler.logging.LogLevel.*;
 import static io.netty.util.ReferenceCountUtil.*;
 
 public class Http2FrontendHandler
-        extends ChannelOutboundHandlerAdapter
-        implements Http2FrameListener {
+    extends ChannelOutboundHandlerAdapter
+    implements Http2FrameListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Http2FrontendHandler.class);
 
@@ -83,16 +88,21 @@ public class Http2FrontendHandler
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         LOGGER.debug("{} : handlerAdded", connectionContext);
 
+        Http2Settings initialSettings = new Http2Settings()
+            .maxHeaderListSize(2*Http2CodecUtil.DEFAULT_HEADER_LIST_SIZE);
+
         Http2Connection http2Connection = new DefaultHttp2Connection(true);
         http2ConnectionHandler = new Http2ConnectionHandlerBuilder()
-                .connection(http2Connection)
-                .frameListener(this)
-                .frameLogger(new Http2FrameLogger(DEBUG))
-                .build();
+            .connection(http2Connection)
+            .initialSettings(initialSettings)
+            .frameListener(this)
+            .frameLogger(new Http2FrameLogger(TRACE, this.getClass()))
+            .build();
 
         ctx.pipeline()
-            .addBefore(ctx.name(), null, http2ConnectionHandler)
-            .addAfter(ctx.name(), null, connectionContext.provider().http2EventHandler());
+           .addBefore(ctx.name(), null, new HeadExceptionHandler(connectionContext))
+           .addBefore(ctx.name(), null, http2ConnectionHandler)
+           .addAfter(ctx.name(), null, connectionContext.provider().http2EventHandler());
     }
 
     @Override
@@ -102,10 +112,10 @@ public class Http2FrontendHandler
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
-            throws Exception {
+        throws Exception {
         if (msg instanceof Http2FrameWrapper) {
             Http2FrameWrapper<?> frame = (Http2FrameWrapper<?>) touch(msg,
-                    format("%s context=%s", msg, connectionContext));
+                                                                      format("%s context=%s", msg, connectionContext));
             frame.write(ctx, http2ConnectionHandler.encoder(), frame.streamId(), promise);
         } else {
             ctx.write(msg, promise);
@@ -139,7 +149,7 @@ public class Http2FrontendHandler
 
     @Override
     public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-        ctx.writeAndFlush(frameWrapper(streamId, new DefaultHttp2ResetFrame(errorCode)));
+        ctx.fireChannelRead(frameWrapper(0, new DefaultHttp2ResetFrame(errorCode)));
     }
 
     @Override
@@ -167,6 +177,9 @@ public class Http2FrontendHandler
     @Override
     public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode,
                              ByteBuf debugData) {
+        DefaultHttp2GoAwayFrame frame = new DefaultHttp2GoAwayFrame(errorCode, debugData);
+        frame.setExtraStreamIds(lastStreamId);
+        ctx.fireChannelRead(frameWrapper(lastStreamId, frame));
     }
 
     @Override

@@ -92,7 +92,7 @@ public class Http2EventHandler extends ChannelDuplexHandler {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         LOGGER.debug("{} : handlerAdded", connectionContext);
-        ctx.pipeline().addBefore(ctx.name(), null, new Http2RawInterceptHandler(connectionContext));
+        //ctx.pipeline().addBefore(ctx.name(), null, new Http2RawInterceptHandler(connectionContext));
     }
 
     @Override

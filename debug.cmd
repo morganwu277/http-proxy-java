@@ -1,2 +1,2 @@
-rm debug/debug.log
+rm debug.log
 gradlew debug

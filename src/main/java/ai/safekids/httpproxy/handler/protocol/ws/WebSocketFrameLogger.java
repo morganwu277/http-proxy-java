@@ -61,7 +61,7 @@ public class WebSocketFrameLogger extends ChannelDuplexHandler {
         }
 
         String content = getContentData(msg);
-        LOGGER.warn("{} : {} {} UNKNOWN \n {}", connectionContext,
+        LOGGER.debug("{} : {} {} UNKNOWN \n {}", connectionContext,
                     name,
                     readOrWrite,
                     log(ctx, msg));

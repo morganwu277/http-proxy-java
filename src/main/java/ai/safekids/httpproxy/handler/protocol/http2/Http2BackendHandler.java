@@ -41,15 +41,18 @@ package ai.safekids.httpproxy.handler.protocol.http2;
 
 import ai.safekids.httpproxy.ConnectionContext;
 import ai.safekids.httpproxy.exception.NitmProxyException;
+import ai.safekids.httpproxy.handler.HeadExceptionHandler;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.DefaultHttp2Connection;
 import io.netty.handler.codec.http2.DefaultHttp2DataFrame;
+import io.netty.handler.codec.http2.DefaultHttp2GoAwayFrame;
 import io.netty.handler.codec.http2.DefaultHttp2HeadersFrame;
 import io.netty.handler.codec.http2.DefaultHttp2ResetFrame;
 import io.netty.handler.codec.http2.DefaultHttp2SettingsFrame;
@@ -57,11 +60,18 @@ import io.netty.handler.codec.http2.DefaultHttp2WindowUpdateFrame;
 import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2ConnectionHandler;
 import io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder;
+import io.netty.handler.codec.http2.Http2DataFrame;
 import io.netty.handler.codec.http2.Http2Flags;
+import io.netty.handler.codec.http2.Http2Frame;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2FrameLogger;
+import io.netty.handler.codec.http2.Http2GoAwayFrame;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2HeadersFrame;
+import io.netty.handler.codec.http2.Http2ResetFrame;
 import io.netty.handler.codec.http2.Http2Settings;
+import io.netty.handler.codec.http2.Http2SettingsFrame;
+import io.netty.handler.codec.http2.Http2WindowUpdateFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,8 +83,8 @@ import static io.netty.handler.logging.LogLevel.*;
 import static io.netty.util.ReferenceCountUtil.*;
 
 public class Http2BackendHandler
-        extends ChannelDuplexHandler
-        implements Http2FrameListener {
+    extends ChannelDuplexHandler
+    implements Http2FrameListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Http2BackendHandler.class);
 
@@ -84,6 +94,8 @@ public class Http2BackendHandler
     private ChannelPromise ready;
     private AtomicInteger currentStreamId = new AtomicInteger(1);
     private BiMap<Integer, Integer> streams = Maps.synchronizedBiMap(HashBiMap.create());
+
+    private Http2Settings http2Settings;
 
     public Http2BackendHandler(ConnectionContext connectionContext) {
         this.connectionContext = connectionContext;
@@ -95,30 +107,35 @@ public class Http2BackendHandler
 
         Http2Connection http2Connection = new DefaultHttp2Connection(false);
         http2ConnectionHandler = new Http2ConnectionHandlerBuilder()
-                .connection(http2Connection)
-                .frameListener(this)
-                .frameLogger(new Http2FrameLogger(DEBUG))
-                .build();
+            .connection(http2Connection)
+            .frameListener(this)
+            .frameLogger(new Http2FrameLogger(TRACE, this.getClass()))
+            .build();
         ctx.pipeline()
-            .addBefore(ctx.name(), null, http2ConnectionHandler);
+           .addBefore(ctx.name(), null, new HeadExceptionHandler(connectionContext))
+           .addBefore(ctx.name(), null, http2ConnectionHandler);
 
         ready = ctx.newPromise();
     }
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise)
-            throws Exception {
+        throws Exception {
         if (!(msg instanceof Http2FrameWrapper)) {
+            LOGGER.debug("{} : expecting http2 frame wrapper but received {}", connectionContext, msg.getClass());
             ctx.write(msg, promise);
             return;
         }
         Http2FrameWrapper<?> frame = (Http2FrameWrapper<?>) msg;
+
         if (ready.isSuccess()) {
+            log(frame);
             frame.write(ctx, http2ConnectionHandler.encoder(), getUpstreamStreamId(frame.streamId()),
                         promise);
             ctx.flush();
         } else {
             ready.addListener(ignore -> {
+                log(frame);
                 frame.write(ctx, http2ConnectionHandler.encoder(), getUpstreamStreamId(frame.streamId()),
                             promise);
                 ctx.flush();
@@ -126,11 +143,11 @@ public class Http2BackendHandler
         }
     }
 
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        LOGGER.debug("{} : exceptionCaught with {}", connectionContext, cause.getMessage());
-        ctx.close();
-    }
+//    @Override
+//    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+//        LOGGER.debug("{} : exceptionCaught with {}", connectionContext, cause.getMessage());
+//        ctx.close();
+//    }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
@@ -146,12 +163,16 @@ public class Http2BackendHandler
     @Override
     public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding,
                           boolean endOfStream) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read data frame from server streamId:{} endOfStream:{}", connectionContext, streamId,
+                         endOfStream);
+        }
         int originStreamId = getOriginStreamId(streamId);
         int processed = data.readableBytes() + padding;
         Http2DataFrameWrapper frame = frameWrapper(originStreamId,
-                new DefaultHttp2DataFrame(data.copy(), endOfStream, padding));
+                                                   new DefaultHttp2DataFrame(data.copy(), endOfStream, padding));
         connectionContext.clientChannel().writeAndFlush(touch(frame,
-                format("%s context=%s", frame, connectionContext)));
+                                                              format("%s context=%s", frame, connectionContext)));
         return processed;
     }
 
@@ -159,41 +180,66 @@ public class Http2BackendHandler
     public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers,
                               int padding, boolean endOfStream) {
         int originStreamId = getOriginStreamId(streamId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read headers frame from server streamId:{} endOfStream:{}\n{}", connectionContext,
+                         originStreamId,
+                         endOfStream, headers);
+        }
         connectionContext.clientChannel().writeAndFlush(
-                frameWrapper(originStreamId, new DefaultHttp2HeadersFrame(headers, endOfStream, padding)));
+            frameWrapper(originStreamId, new DefaultHttp2HeadersFrame(headers, endOfStream, padding)));
     }
 
     @Override
     public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers,
                               int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) {
         int originStreamId = getOriginStreamId(streamId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read headers frame from server streamId:{} endOfStream:{}\n{}", connectionContext,
+                         originStreamId,
+                         endOfStream, headers);
+        }
         connectionContext.clientChannel().writeAndFlush(
-                frameWrapper(originStreamId, new DefaultHttp2HeadersFrame(headers, endOfStream, padding)));
+            frameWrapper(originStreamId, new DefaultHttp2HeadersFrame(headers, endOfStream, padding)));
     }
 
     @Override
     public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency,
                                short weight, boolean exclusive) {
+        int originStreamId = getOriginStreamId(streamId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read priority frame from server streamId:{}", connectionContext, originStreamId);
+        }
     }
 
     @Override
     public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
         int originStreamId = getOriginStreamId(streamId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read RST stream from server streamId:{} errorCode:{}",
+                         connectionContext, originStreamId,
+                         errorCode);
+        }
         connectionContext.clientChannel().writeAndFlush(
-                frameWrapper(originStreamId, new DefaultHttp2ResetFrame(errorCode)));
+            frameWrapper(originStreamId, new DefaultHttp2ResetFrame(errorCode)));
     }
 
     @Override
     public void onSettingsAckRead(ChannelHandlerContext ctx) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read settings ACK from server", connectionContext);
+        }
     }
 
     @Override
     public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
+        this.http2Settings = settings;
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read settings frame from server {}", connectionContext, settings);
+        }
         ready.setSuccess();
-
         connectionContext.clientChannel().writeAndFlush(
-                frameWrapper(0,
-                             new DefaultHttp2SettingsFrame(settings)));
+            frameWrapper(0,
+                         new DefaultHttp2SettingsFrame(settings)));
     }
 
     @Override
@@ -212,14 +258,26 @@ public class Http2BackendHandler
     @Override
     public void onGoAwayRead(ChannelHandlerContext ctx, int lastStreamId, long errorCode,
                              ByteBuf debugData) {
+        int originStreamId = getOriginStreamId(lastStreamId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : go away read frame for streamId:{} errorCode:{} debugData:{}",
+                         connectionContext, lastStreamId, errorCode, ByteBufUtil.prettyHexDump(debugData));
+        }
+        DefaultHttp2GoAwayFrame frame = new DefaultHttp2GoAwayFrame(errorCode, debugData);
+        frame.setExtraStreamIds(lastStreamId);
+        connectionContext.clientChannel().writeAndFlush(frameWrapper(originStreamId, frame));
     }
 
     @Override
     public void onWindowUpdateRead(ChannelHandlerContext ctx, int streamId, int windowSizeIncrement) {
         int originStreamId = getOriginStreamId(streamId);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{} : read windows update frame streamId:{} increment {}", connectionContext, originStreamId,
+                         windowSizeIncrement);
+        }
         connectionContext.clientChannel().writeAndFlush(
-                frameWrapper(originStreamId,
-                             new DefaultHttp2WindowUpdateFrame(windowSizeIncrement)));
+            frameWrapper(originStreamId,
+                         new DefaultHttp2WindowUpdateFrame(windowSizeIncrement)));
     }
 
     @Override
@@ -242,5 +300,40 @@ public class Http2BackendHandler
             throw new IllegalStateException("No stream found: " + streamId);
         }
         return streams.inverse().get(streamId);
+    }
+
+    private void log(Http2FrameWrapper<?> frame) {
+        if (LOGGER.isTraceEnabled()) {
+            Http2Frame http2Frame = frame.frame();
+            int streamId = frame.streamId();
+            boolean endOfStream = frame.isEndStream();
+
+            if (http2Frame instanceof Http2HeadersFrame) {
+                LOGGER.trace("{} : sending http2 headers streamId:{} headers:{}",
+                             connectionContext, streamId, ((Http2HeadersFrame) http2Frame).headers());
+            } else if (http2Frame instanceof Http2DataFrame) {
+                LOGGER.trace("{} : sending http2 data frame streamId:{} length:{} endOfStream:{}",
+                             connectionContext, streamId, ((Http2DataFrame) http2Frame).content().readableBytes(),
+                             endOfStream);
+            } else if (http2Frame instanceof Http2SettingsFrame) {
+                LOGGER.trace("{} : sending http2 settings frame streamId:{} settings:{}",
+                             connectionContext, streamId, ((Http2SettingsFrame) http2Frame).settings());
+            } else if (http2Frame instanceof Http2WindowUpdateFrame) {
+                LOGGER.trace("{} : sending http2 windows update frame streamId:{} settings:{}",
+                             connectionContext, streamId, ((Http2WindowUpdateFrame) http2Frame).windowSizeIncrement());
+            } else if (http2Frame instanceof Http2ResetFrame) {
+                LOGGER.trace("{} : sending http2 reset frame streamId:{} errorCode:{}",
+                             connectionContext, streamId, ((Http2ResetFrame) http2Frame).errorCode());
+
+            } else if (http2Frame instanceof Http2GoAwayFrame) {
+                Http2GoAwayFrame goAwayFrame = (Http2GoAwayFrame) http2Frame;
+                LOGGER.trace("{} : sending http2 go away frame streamId:{} errorCode:{} data:{}",
+                             connectionContext, streamId, goAwayFrame.errorCode(),
+                             ByteBufUtil.prettyHexDump(goAwayFrame.content()));
+            } else {
+                LOGGER.trace("{} : unkknown http2 frame streamId:{} name:{} type:{}",
+                             connectionContext, streamId, http2Frame.name(), http2Frame.getClass());
+            }
+        }
     }
 }

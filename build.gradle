@@ -27,7 +27,7 @@ task debug(type: JavaExec) {
                "-Dlogback.configurationFile=debug/logger_debug.xml",
                "-Dcheckstyle.skip",
                "-Dcom.sun.net.ssl.checkRevocation=false"]
-    args = ["-tls=TLSv1.2,TLSv1.3"]
+    args = ["-tls=TLSv1.2,TLSv1.3", "-maxlength=100000000"]
 }
 
 task cert(type: JavaExec) {
