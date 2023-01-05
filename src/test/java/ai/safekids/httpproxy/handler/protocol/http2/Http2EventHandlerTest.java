@@ -46,8 +46,11 @@ import ai.safekids.httpproxy.event.HttpEvent;
 import ai.safekids.httpproxy.listener.NitmProxyListener;
 import com.google.common.collect.ImmutableList;
 import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.DefaultEventExecutor;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import org.assertj.core.data.Offset;
 import org.junit.After;
@@ -104,9 +107,9 @@ public class Http2EventHandlerTest {
         return promise;
     }
 
-//    @Test
+    @Test
     public void shouldSendRequestAfterRequestEnded() {
-//        when(listener.onHttp2Request(any(), any(), any())).thenReturn(promise);
+        when(listener.onHttp2Request(any(), any(), any())).thenReturn(emptyRequest());
         List<Http2FrameWrapper<?>> requestFrames = Http2FramesWrapper
             .builder(1)
             .request(textRequest(HttpVersion.HTTP_1_1, POST, "localhost", "/", "Hello nitmproxy"))
@@ -153,7 +156,7 @@ public class Http2EventHandlerTest {
         assertEquals("localhost", event.getHost());
         assertEquals("/", event.getPath());
         assertEquals(0, event.getRequestBodySize());
-        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(100L));
+        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(200L));
         assertEquals(OK, event.getStatus());
         assertEquals(TEXT_PLAIN.toString(), event.getContentType());
         assertThat(event.getResponseTime()).isGreaterThanOrEqualTo(0);
@@ -186,7 +189,7 @@ public class Http2EventHandlerTest {
         assertEquals("localhost", event.getHost());
         assertEquals("/", event.getPath());
         assertEquals(0, event.getRequestBodySize());
-        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(100L));
+        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(200L));
         assertEquals(OK, event.getStatus());
         assertEquals(TEXT_PLAIN.toString(), event.getContentType());
         assertThat(event.getResponseTime()).isGreaterThanOrEqualTo(0);

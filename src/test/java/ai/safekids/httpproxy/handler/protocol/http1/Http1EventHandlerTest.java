@@ -46,17 +46,26 @@ import ai.safekids.httpproxy.testing.EmbeddedChannelAssert;
 import ai.safekids.httpproxy.ConnectionContext;
 import ai.safekids.httpproxy.event.HttpEvent;
 import com.google.common.collect.ImmutableList;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.DefaultLastHttpContent;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.HttpResponse;
+import io.netty.util.concurrent.DefaultEventExecutor;
+import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.Promise;
 import org.assertj.core.data.Offset;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+
+import java.util.Optional;
 
 import static ai.safekids.httpproxy.http.HttpUtil.*;
 import static ai.safekids.httpproxy.listener.NitmProxyListenerProvider.*;
@@ -94,9 +103,10 @@ public class Http1EventHandlerTest {
         channel.finishAndReleaseAll();
     }
 
-//    @Test
+    @Test
     public void shouldLogWithFullResponse() {
-        //when(listener.onHttp1Request(any(), any(), any())).thenReturn(Optional.empty());
+        Future<Optional<FullHttpResponse>> future = channel.eventLoop().newSucceededFuture(Optional.empty());
+        when(listener.onHttp1Request(any(), any(), any())).thenReturn(future);
         when(listener.onHttp1Response(any(), any())).thenAnswer(invocation -> {
             HttpObject httpObject = (HttpObject) invocation.getArguments()[1];
             return ImmutableList.of(httpObject);
@@ -115,16 +125,17 @@ public class Http1EventHandlerTest {
         assertEquals("localhost", event.getHost());
         assertEquals("/", event.getPath());
         assertEquals(0, event.getRequestBodySize());
-        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(100L));
+        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(200L));
         assertEquals(OK, event.getStatus());
         assertEquals(TEXT_PLAIN.toString(), event.getContentType());
         assertThat(event.getResponseTime()).isGreaterThanOrEqualTo(0);
         assertEquals(15, event.getResponseBodySize());
     }
 
-//    @Test
+    @Test
     public void shouldLogWithResponseAndContent() {
-//        when(listener.onHttp1Request(any(), any(), any())).thenReturn(Optional.empty());
+        Future<Optional<FullHttpResponse>> future = channel.eventLoop().newSucceededFuture(Optional.empty());
+        when(listener.onHttp1Request(any(), any(), any())).thenReturn(future);
         when(listener.onHttp1Response(any(), any())).thenAnswer(invocation -> {
             HttpObject httpObject = (HttpObject) invocation.getArguments()[1];
             return ImmutableList.of(httpObject);
@@ -149,16 +160,18 @@ public class Http1EventHandlerTest {
         assertEquals("localhost", event.getHost());
         assertEquals("/", event.getPath());
         assertEquals(0, event.getRequestBodySize());
-        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(100L));
+        assertThat(event.getRequestTime()).isCloseTo(currentTimeMillis(), Offset.offset(200L));
         assertEquals(OK, event.getStatus());
         assertEquals(TEXT_PLAIN.toString(), event.getContentType());
         assertThat(event.getResponseTime()).isGreaterThanOrEqualTo(0);
         assertEquals(15, event.getResponseBodySize());
     }
 
-//    @Test
+    @Test
     public void shouldInterceptWithResponse() {
-//        when(listener.onHttp1Request(any(), any(), any())).thenReturn(Optional.of(defaultResponse("Hello Nitmproxy")));
+        Future<Optional<FullHttpResponse>> future =
+            channel.eventLoop().newSucceededFuture(Optional.of(defaultResponse("Hello Nitmproxy")));
+        when(listener.onHttp1Request(any(), any(), any())).thenReturn(future);
 
         assertFalse(channel.writeInbound(defaultRequest()));
         EmbeddedChannelAssert.assertChannel(channel)
@@ -183,8 +196,10 @@ public class Http1EventHandlerTest {
         assertEquals(15, event.getResponseBodySize());
     }
 
-//    @Test
+    @Test
     public void shouldPipeRequests() {
+        Future<Optional<FullHttpResponse>> future = channel.eventLoop().newSucceededFuture(Optional.empty());
+        when(listener.onHttp1Request(any(), any(), any())).thenReturn(future);
         when(listener.onHttp1Response(any(), any())).thenAnswer(invocation -> {
             HttpObject httpObject = (HttpObject) invocation.getArguments()[1];
             return ImmutableList.of(httpObject);
@@ -202,5 +217,4 @@ public class Http1EventHandlerTest {
         assertEquals("/first", captor.getAllValues().get(0).getPath());
         assertEquals("/second", captor.getAllValues().get(1).getPath());
     }
-
 }

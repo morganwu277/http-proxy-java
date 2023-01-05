@@ -165,25 +165,41 @@ public class Http1EventHandler extends ChannelDuplexHandler {
             Future<Optional<FullHttpResponse>> responsePromise =
                 listener.onHttp1Request(ctx, connectionContext, request);
 
+            //if we are already done....
+            if (responsePromise.isDone()) {
+                Optional<FullHttpResponse> res =
+                    (responsePromise.isSuccess())? responsePromise.getNow() : Optional.empty();
+                handleResponse(ctx, request, res);
+                return;
+            }
+
+            //otherwise handle an async response
             responsePromise.addListener(p -> {
-                boolean isCustomResponse = responsePromise.isSuccess() && responsePromise.getNow() != null &&
-                                           responsePromise.getNow().isPresent();
-                if (isCustomResponse) {
-                    FullHttpResponse response = responsePromise.getNow().get();
-                    try {
-                        sendResponse(ctx, request, response);
-                    } finally {
-                        request.release();
-                    }
-                } else {
-                    this.requests.add(request.retain());
-                    this.requestTime = currentTimeMillis();
-                    ctx.fireChannelRead(msg);
-                }
+                Optional<FullHttpResponse> res = (p.isSuccess())? responsePromise.getNow() : Optional.empty();
+                handleResponse(ctx, request, res);
+                return;
             });
         } catch (Exception e) {
             LOGGER.debug("onHttp1Request error", e);
             throw e;
+        }
+    }
+
+    private void handleResponse(ChannelHandlerContext ctx,
+                                FullHttpRequest request,
+                                Optional<FullHttpResponse> optionalResponse) {
+        boolean hadCustomResponse = optionalResponse.isPresent();
+        if (hadCustomResponse) {
+            FullHttpResponse response = optionalResponse.get();
+            try {
+                sendResponse(ctx, request, response);
+            } finally {
+                request.release();
+            }
+        } else {
+            this.requests.add(request.retain());
+            this.requestTime = currentTimeMillis();
+            ctx.fireChannelRead(request);
         }
     }
 

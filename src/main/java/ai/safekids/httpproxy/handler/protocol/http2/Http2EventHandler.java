@@ -56,6 +56,7 @@ import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.Frame;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -184,33 +185,41 @@ public class Http2EventHandler extends ChannelDuplexHandler {
         try {
             Future<Optional<Http2FramesWrapper>> responsePromise =
                 listener.onHttp2Request(ctx, connectionContext, request);
-            responsePromise.addListener(p -> {
-                if (responsePromise.isSuccess()) {
-                    Optional<Http2FramesWrapper> responseOptional = responsePromise.getNow();
-                    if (!responseOptional.isPresent()) {
-                        request.getAllFrames().forEach(ctx::fireChannelRead);
-                        return;
-                    }
-                    try {
-                        Http2FramesWrapper response = responseOptional.get();
-                        frameCollector.onResponseHeadersFrame(response.getHeaders());
-                        response.getData().forEach(frameCollector::onResponseDataFrame);
-                        frameCollector.collect().ifPresent(listener::onHttpEvent);
-                        response.getAllFrames().forEach(ctx::write);
-                        ctx.flush();
-                    } finally {
-                        release(request);
-                        frameCollector.release();
-                        streams.remove(frameWrapper.streamId());
-                    }
-                } else {
-                    request.getAllFrames().forEach(ctx::fireChannelRead);
-                    return;
-                }
-            });
 
+            if (responsePromise.isDone()) {
+                handleResponse(ctx, frameWrapper, frameCollector, request, responsePromise.getNow());
+            } else {
+                responsePromise.addListener(p -> {
+                    Optional<Http2FramesWrapper> responseOptional =
+                        (responsePromise.isSuccess())? responsePromise.getNow() : Optional.empty();
+                    handleResponse(ctx, frameWrapper, frameCollector, request, responseOptional);
+                });
+            }
         } catch (Exception e) {
             LOGGER.error("onHttp2Request exception", e);
+        }
+    }
+
+    private void handleResponse(ChannelHandlerContext ctx,
+                                Http2FrameWrapper<?> msg,
+                                FrameCollector frameCollector,
+                                Http2FramesWrapper request,
+                                Optional<Http2FramesWrapper> responseOptional) {
+        if (!responseOptional.isPresent()) {
+            request.getAllFrames().forEach(ctx::fireChannelRead);
+            return;
+        }
+        try {
+            Http2FramesWrapper response = responseOptional.get();
+            frameCollector.onResponseHeadersFrame(response.getHeaders());
+            response.getData().forEach(frameCollector::onResponseDataFrame);
+            frameCollector.collect().ifPresent(listener::onHttpEvent);
+            response.getAllFrames().forEach(ctx::write);
+            ctx.flush();
+        } finally {
+            release(request);
+            frameCollector.release();
+            streams.remove(msg.streamId());
         }
     }
 
