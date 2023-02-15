@@ -32,7 +32,7 @@ Configure Wireshark to use the file Edit -> Preferences -> Protocol -> TLS -> Ma
 and point to either sslbrowser.log or sslnitm.log to do full decryption.
 ```
 
- 
+``` 
  WebSocker Frame Format
  
   0                   1                   2                   3
