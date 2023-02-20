@@ -29,6 +29,11 @@ usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
  <img src="https://github.com/safekids-ai/http-proxy-java/blob/main/docs/images/proxy3.jpg" height="280">
 </p>
 
+
+### How to setup proxy video
+https://user-images.githubusercontent.com/22925551/220187454-4c82dbdb-715a-4d50-adf4-c813a03a2f0a.mp4
+
+
 ### Features
 
 #### Support Proxy
