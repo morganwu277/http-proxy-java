@@ -62,8 +62,8 @@ debug.cmd
 Under debug.cmd, all encryption keys are stored in a log files called <b>debug/logs/sslkeys.log </b>. These keys will be required to decrypt SSL traffic in transit. You can use wireshark to observe the traffic using the following:
 
 ```
-tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslkeys.log"
-wireshark -r logs\nlog.pcap
+tshark -w logs\nlog.pcap -i "Ethernet 6" 
+wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslkeys.log"
 ```
 Please replace your interface "Ethernet 6" with the interface you are using for internet access. Once you're done with capture with tshark, you can use wireshark to view the unencrypted nlog.pcap file.
 
