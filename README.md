@@ -2,6 +2,25 @@
 
 A proxy server based on [netty](https://github.com/netty/netty).
 
+### Features
+
+#### Support Proxy
+- HTTP Proxy
+- HTTP Proxy (Tunnel)
+- Socks Proxy
+- Transparent Proxy
+
+#### Support Protocol
+- HTTP/1
+- HTTP/2
+- WebSocket
+- TLS
+
+#### Support Functionality
+- Display network traffic
+- Modify network traffic
+
+## Installation
 ### Step 1: Generate and Import server certificate into trust store (this will create a server.crt, server.pem and key.pem)
 ```
 gradlew cert
@@ -33,24 +52,8 @@ usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
 ### How to setup proxy video
 https://user-images.githubusercontent.com/22925551/220187454-4c82dbdb-715a-4d50-adf4-c813a03a2f0a.mp4
 
+## Packet Capture
 
-### Features
-
-#### Support Proxy
-- HTTP Proxy
-- HTTP Proxy (Tunnel)
-- Socks Proxy
-- Transparent Proxy
-
-#### Support Protocol
-- HTTP/1
-- HTTP/2
-- WebSocket
-- TLS
-
-#### Support Functionality
-- Display network traffic
-- Modify network traffic
 
 ### Development
 
