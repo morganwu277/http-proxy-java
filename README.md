@@ -63,6 +63,7 @@ Under debug.cmd, all encryption keys are stored in a log files called <b>debug/l
 
 ```
 tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslkeys.log"
+wireshark -r logs\nlog.pcap
 ```
 Please replace your interface "Ethernet 6" with the interface you are using for internet access. Also, please make sure you can storing your network capture into the file nlog.pcap which contains the encrypted traffic.
 
