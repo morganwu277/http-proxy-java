@@ -52,7 +52,31 @@ usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
 ### How to setup proxy video
 https://user-images.githubusercontent.com/22925551/220187454-4c82dbdb-715a-4d50-adf4-c813a03a2f0a.mp4
 
-## Packet Capture
+## Packet Capture (from proxy to the internet)
+You can capture traffic received in and out of the browser and also the packets send from the proxy to outbound ethernet adapter. The run proxy in packet capture mode, please execute the proxy in "debug" mode. That is done using the following:
+
+```
+debug.cmd
+```
+
+Under debug.cmd, all encryption keys are stored in a log files called <b>debug/logs/sslkeys.log </b>. These keys will be required to decrypt SSL traffic in transit. You can use wireshark to observe the traffic using the following:
+
+```
+tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslkeys.log"
+```
+Please replace your interface "Ethernet 6" with the interface you are using for internet access. Also, please make sure you can storing your network capture into the file nlog.pcap which contains the encrypted traffic.
+
+## Packet Capture (in and out of browser)
+By default, chrome allows all encryption keys to be written to a file for debugging. You have to set the following environment variable:
+
+```
+set environment variable:
+       SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
+tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslbrowser.txt"
+```
+
+### How to setup proxy video
+
 
 
 ### Development
