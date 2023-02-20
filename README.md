@@ -80,6 +80,17 @@ tshark -w logs\nlog.pcap -i "Ethernet 6"
 wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.txt"
 ```
 
+## Proxy Modes
+The proxy can run in both TRANSPARENT mode (packets are directly forwarded) or can be used as an HTTP proxy. The mode is passed into the proxy using initial configuration. Transparent proxy can be replicated in Linux using the following commands:
+
+```
+sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.ipv6.conf.all.forwarding=1
+sysctl -w net.ipv4.conf.all.send_redirects=0
+iptables -t nat -A OUTPUT -p tcp --dport 80 -j DNAT --to-destination <transparent proxy ip>:<transparent proxy port>
+iptables -t nat -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination <transparent proxy ip>:<transparent proxy port>
+```
+
 ## Development
 
 ### Coding Style
