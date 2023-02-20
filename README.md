@@ -20,10 +20,11 @@ usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
 ```
 
 ## Step 3: Configure platform to use the proxy
-![Alt text](docs/images/proxy1.jpg?raw=true "Proxy Settings")
-![Alt text](docs/images/proxy2.jpg?raw=true "Manual Proxy Setup")
-![Alt text](docs/images/proxy3.jpg?raw=true "Edit Proxy")
-
+<p align="center">
+ <img src="https://github.com/safekids-ai/http-proxy-java/blob/main/docs/images/proxy1.jpg" height="280">
+ <img src="https://github.com/safekids-ai/http-proxy-java/blob/main/docs/images/proxy2.jpg" height="280">
+ <img src="https://github.com/safekids-ai/http-proxy-java/blob/main/docs/images/proxy3.jpg" height="280">
+</p>
 ## Features
 
 ### Support Proxy
