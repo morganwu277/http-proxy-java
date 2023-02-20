@@ -67,59 +67,27 @@ wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslkeys.log"
 ```
 Please replace your interface "Ethernet 6" with the interface you are using for internet access. Once you're done with capture with tshark, you can use wireshark to view the unencrypted nlog.pcap file.
 
+### How to capture traffic from proxy to ethernet video
+https://user-images.githubusercontent.com/22925551/220200031-87fa3a4b-8c0b-40c9-9080-70b84599d421.mp4
+
 ## Packet Capture (in and out of browser)
 By default, chrome allows all encryption keys to be written to a file for debugging. You have to set the following environment variable:
 
 ```
 set environment variable:
        SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
-tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslbrowser.txt"
+tshark -w logs\nlog.pcap -i "Ethernet 6" 
+wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.log"
 ```
 
-### How to setup proxy video
-
-
-
-### Development
+## Development
 
 ### Coding Style
 
 We are using same coding style with netty, please follow the instructions from the [netty#Setting up development environment](https://netty.io/wiki/setting-up-development-environment.html) to setup.
 
-Basic Commands
 
-```
-cert.cmd (will create the server certificates)
-run.cmd (will run the proxy with default settings)
-debug.cmd (will run it in debug mode with SSL decryption)
-
-or directly with gradle
-
-gradlew run --args <OPTIONS>
-gradlew debug
-gradlew cert
-```
-
-```
-ANALYZE PACKETS USING WIRESHARK
-===============================
-Capture Browser Traffic
- - Set an environment variable:
- - SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
-
-Capture Netty Traffic to the server (Ethernet Outbound)
- - tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslkeys.log"
- - wireshark -r logs\nlog.pcap
-
- OR
- 
- debug/shark.cmd (to capture)
- debug/view-shark.cmd (to view)
-
-Configure Wireshark to use the file Edit -> Preferences -> Protocol -> TLS -> Master Secret Log File Name
-and point to either sslbrowser.log or sslnitm.log to do full decryption.
-```
-
+### WebSocket Protocol
 ``` 
  WebSocker Frame Format
  
