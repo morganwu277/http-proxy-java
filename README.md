@@ -1,3 +1,53 @@
+# Netty in the Middle
+
+A proxy server based on [netty](https://github.com/netty/netty).
+
+## Step 1: Generate server certificate (this will create a server.pem and key.pem)
+> gradlew cert
+
+## Step 2: Start proxy. Default port is 8080
+```
+> ./proxy.cmd (or proxy.sh) --help
+usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
+       [--key <KEY>] [-m <MODE>] [-p <PORT>] [--serverNoHttp2]
+    --cert <CERTIFICATE>   x509 certificate used by server(*.pem),
+                           default: server.pem
+ -h,--host <HOST>          listening host, default: 127.0.0.1
+ -k,--insecure             not verify on server certificate
+    --key <KEY>            key used by server(*.pem), default: key.pem
+ -m,--mode <MODE>          proxy mode(HTTP, SOCKS, TRANSPARENT), default: HTTP
+ -p,--port <PORT>          listening port, default: 8080
+```
+
+## Step 3: Configure platform to use the proxy
+![Alt text](docs/images/proxy1.jpg?raw=true "Proxy Settings")
+![Alt text](docs/images/proxy2.jpg?raw=true "Manual Proxy Setup")
+![Alt text](docs/images/proxy3.jpg?raw=true "Edit Proxy")
+
+## Features
+
+### Support Proxy
+- HTTP Proxy
+- HTTP Proxy (Tunnel)
+- Socks Proxy
+- Transparent Proxy
+
+### Support Protocol
+- HTTP/1
+- HTTP/2
+- WebSocket
+- TLS
+
+### Support Functionality
+- Display network traffic
+- Modify network traffic
+
+## Development
+
+### Coding Style
+
+We are using same coding style with netty, please follow the instructions from the [netty#Setting up development environment](https://netty.io/wiki/setting-up-development-environment.html) to setup.
+
 Basic Commands
 
 ```
