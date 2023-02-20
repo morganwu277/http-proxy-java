@@ -1,11 +1,11 @@
-# Netty in the Middle
+## Netty in the Middle
 
 A proxy server based on [netty](https://github.com/netty/netty).
 
-## Step 1: Generate server certificate (this will create a server.pem and key.pem)
+### Step 1: Generate server certificate (this will create a server.pem and key.pem)
 > gradlew cert
 
-## Step 2: Start proxy. Default port is 8080
+### Step 2: Start proxy. Default port is 8080
 ```
 > ./proxy.cmd (or proxy.sh) --help
 usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
@@ -19,31 +19,32 @@ usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
  -p,--port <PORT>          listening port, default: 8080
 ```
 
-## Step 3: Configure platform to use the proxy
+### Step 3: Configure platform to use the proxy
 <p align="center">
  <img src="https://github.com/safekids-ai/http-proxy-java/blob/main/docs/images/proxy1.jpg" height="280">
  <img src="https://github.com/safekids-ai/http-proxy-java/blob/main/docs/images/proxy2.jpg" height="280">
  <img src="https://github.com/safekids-ai/http-proxy-java/blob/main/docs/images/proxy3.jpg" height="280">
 </p>
-## Features
 
-### Support Proxy
+### Features
+
+#### Support Proxy
 - HTTP Proxy
 - HTTP Proxy (Tunnel)
 - Socks Proxy
 - Transparent Proxy
 
-### Support Protocol
+#### Support Protocol
 - HTTP/1
 - HTTP/2
 - WebSocket
 - TLS
 
-### Support Functionality
+#### Support Functionality
 - Display network traffic
 - Modify network traffic
 
-## Development
+### Development
 
 ### Coding Style
 
