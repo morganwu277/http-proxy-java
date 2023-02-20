@@ -1,6 +1,26 @@
 ## Netty in the Middle
-
 A proxy server based on [netty](https://github.com/netty/netty).
+
+- [Netty in the Middle](#netty-in-the-middle)
+  * [Features](#features)
+    + [Support Proxy](#support-proxy)
+    + [Support Protocol](#support-protocol)
+    + [Support Functionality](#support-functionality)
+- [Installation](#installation)
+  * [Step 1: Generate and Import server certificate into trust store (this will create a server.crt, server.pem and key.pem)](#step-1--generate-and-import-server-certificate-into-trust-store--this-will-create-a-servercrt--serverpem-and-keypem-)
+  * [Step 2: Start proxy. Default port is 8080](#step-2--start-proxy-default-port-is-8080)
+  * [Step 3: Configure platform to use the proxy](#step-3--configure-platform-to-use-the-proxy)
+  * [How to setup proxy video](#how-to-setup-proxy-video)
+- [Packet Capture (from proxy to the internet)](#packet-capture--from-proxy-to-the-internet-)
+  * [How to capture traffic from proxy to ethernet video](#how-to-capture-traffic-from-proxy-to-ethernet-video)
+- [Packet Capture (in and out of browser)](#packet-capture--in-and-out-of-browser-)
+- [Proxy Modes](#proxy-modes)
+- [Development](#development)
+  * [Coding Style](#coding-style)
+  * [WebSocket Protocol](#websocket-protocol)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 
 ### Features
 
