@@ -77,7 +77,7 @@ By default, chrome allows all encryption keys to be written to a file for debugg
 set environment variable:
        SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
 tshark -w logs\nlog.pcap -i "Ethernet 6" 
-wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.log"
+wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.txt"
 ```
 
 ## Development
@@ -85,7 +85,7 @@ wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.log"
 ### Coding Style
 
 We are using same coding style with netty, please follow the instructions from the [netty#Setting up development environment](https://netty.io/wiki/setting-up-development-environment.html) to setup.
-
+ 
 
 ### WebSocket Protocol
 ``` 
