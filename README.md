@@ -3,8 +3,10 @@
 A proxy server based on [netty](https://github.com/netty/netty).
 
 ### Step 1: Generate and Import server certificate into trust store (this will create a server.crt, server.pem and key.pem)
-> gradlew cert
-> certutil.exe -addstore root server.crt
+```
+gradlew cert
+certutil.exe -addstore root server.crt
+```
 
 ### Step 2: Start proxy. Default port is 8080
 ```
