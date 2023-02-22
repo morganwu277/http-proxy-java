@@ -1,5 +1,4 @@
 ## Netty in the Middle
-
 A proxy server based on [netty](https://github.com/netty/netty).
 
 ### Features
@@ -77,7 +76,18 @@ By default, chrome allows all encryption keys to be written to a file for debugg
 set environment variable:
        SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
 tshark -w logs\nlog.pcap -i "Ethernet 6" 
-wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.log"
+wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.txt"
+```
+
+## Proxy Modes
+The proxy can run in both TRANSPARENT mode (packets are directly forwarded) or can be used as an HTTP proxy. The mode is passed into the proxy using initial configuration. Transparent proxy can be replicated in Linux using the following commands:
+
+```
+sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.ipv6.conf.all.forwarding=1
+sysctl -w net.ipv4.conf.all.send_redirects=0
+iptables -t nat -A OUTPUT -p tcp --dport 80 -j DNAT --to-destination <transparent proxy ip>:<transparent proxy port>
+iptables -t nat -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination <transparent proxy ip>:<transparent proxy port>
 ```
 
 ## Development
@@ -85,7 +95,7 @@ wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.log"
 ### Coding Style
 
 We are using same coding style with netty, please follow the instructions from the [netty#Setting up development environment](https://netty.io/wiki/setting-up-development-environment.html) to setup.
-
+ 
 
 ### WebSocket Protocol
 ``` 
