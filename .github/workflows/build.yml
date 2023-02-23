@@ -1,7 +1,6 @@
 name: Build Gradle project
 
-on:
-  push:
+on: [push, pull_request]
 
 jobs:
   build-gradle-project:
