@@ -1,3 +1,5 @@
+[![Publish Gradle Package](https://github.com/safekids-ai/http-proxy-java/actions/workflows/gradle-publish.yml/badge.svg)](https://github.com/safekids-ai/http-proxy-java/actions/workflows/gradle-publish.yml)
+
 ## Netty in the Middle
 A proxy server based on [netty](https://github.com/netty/netty).
 
