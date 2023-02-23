@@ -8,8 +8,14 @@
 name: Publish Gradle Package
 
 on:
-  release:
-    types: [created]
+  pull_request:
+    branches: ['**']
+  push:
+    branches: ['main']
+
+#on:
+#  release:
+#    types: [created]
 
 jobs:
   build:
@@ -26,6 +32,7 @@ jobs:
       with:
         java-version: '11'
         distribution: 'temurin'
+        cache: 'gradle'
         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
@@ -37,6 +44,7 @@ jobs:
     # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
     # the publishing section of your build.gradle
     - name: Publish to GitHub Packages
+      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
       uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
       with:
         arguments: publish
