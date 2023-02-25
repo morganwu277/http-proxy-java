@@ -1,5 +1,6 @@
-## Netty in the Middle
+[![Publish Gradle Package](https://github.com/safekids-ai/http-proxy-java/actions/workflows/gradle-publish.yml/badge.svg)](https://github.com/safekids-ai/http-proxy-java/actions/workflows/gradle-publish.yml)
 
+## Netty in the Middle
 A proxy server based on [netty](https://github.com/netty/netty).
 
 ### Features
@@ -52,49 +53,53 @@ usage: proxy [--cert <CERTIFICATE>] [--clientNoHttp2] [-h <HOST>] [-k]
 ### How to setup proxy video
 https://user-images.githubusercontent.com/22925551/220187454-4c82dbdb-715a-4d50-adf4-c813a03a2f0a.mp4
 
-## Packet Capture
+## Packet Capture (from proxy to the internet)
+You can capture traffic received in and out of the browser and also the packets send from the proxy to outbound ethernet adapter. The run proxy in packet capture mode, please execute the proxy in "debug" mode. That is done using the following:
 
+```
+debug.cmd
+```
 
-### Development
+Under debug.cmd, all encryption keys are stored in a log files called <b>debug/logs/sslkeys.log </b>. These keys will be required to decrypt SSL traffic in transit. You can use wireshark to observe the traffic using the following:
+
+```
+tshark -w logs\nlog.pcap -i "Ethernet 6" 
+wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslkeys.log"
+```
+Please replace your interface "Ethernet 6" with the interface you are using for internet access. Once you're done with capture with tshark, you can use wireshark to view the unencrypted nlog.pcap file.
+
+### How to capture traffic from proxy to ethernet video
+https://user-images.githubusercontent.com/22925551/220200031-87fa3a4b-8c0b-40c9-9080-70b84599d421.mp4
+
+## Packet Capture (in and out of browser)
+By default, chrome allows all encryption keys to be written to a file for debugging. You have to set the following environment variable:
+
+```
+set environment variable:
+       SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
+tshark -w logs\nlog.pcap -i "Ethernet 6" 
+wireshark -r logs\nlog.pcap -o "tls.keylog_file:logs/sslbrowser.txt"
+```
+
+## Proxy Modes
+The proxy can run in both TRANSPARENT mode (packets are directly forwarded) or can be used as an HTTP proxy. The mode is passed into the proxy using initial configuration. Transparent proxy can be replicated in Linux using the following commands:
+
+```
+sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.ipv6.conf.all.forwarding=1
+sysctl -w net.ipv4.conf.all.send_redirects=0
+iptables -t nat -A OUTPUT -p tcp --dport 80 -j DNAT --to-destination <transparent proxy ip>:<transparent proxy port>
+iptables -t nat -A OUTPUT -p tcp --dport 443 -j DNAT --to-destination <transparent proxy ip>:<transparent proxy port>
+```
+
+## Development
 
 ### Coding Style
 
 We are using same coding style with netty, please follow the instructions from the [netty#Setting up development environment](https://netty.io/wiki/setting-up-development-environment.html) to setup.
-
-Basic Commands
-
-```
-cert.cmd (will create the server certificates)
-run.cmd (will run the proxy with default settings)
-debug.cmd (will run it in debug mode with SSL decryption)
-
-or directly with gradle
-
-gradlew run --args <OPTIONS>
-gradlew debug
-gradlew cert
-```
-
-```
-ANALYZE PACKETS USING WIRESHARK
-===============================
-Capture Browser Traffic
- - Set an environment variable:
- - SSLKEYLOGFILE = <PATH>\http-proxy-java\logs\sslbrowser.txt
-
-Capture Netty Traffic to the server (Ethernet Outbound)
- - tshark -w logs\nlog.pcap -i "Ethernet 6" -o "tls.keylog_file:logs/sslkeys.log"
- - wireshark -r logs\nlog.pcap
-
- OR
  
- debug/shark.cmd (to capture)
- debug/view-shark.cmd (to view)
 
-Configure Wireshark to use the file Edit -> Preferences -> Protocol -> TLS -> Master Secret Log File Name
-and point to either sslbrowser.log or sslnitm.log to do full decryption.
-```
-
+### WebSocket Protocol
 ``` 
  WebSocker Frame Format
  
